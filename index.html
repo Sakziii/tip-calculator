@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0B0B0D" />
+<meta name="mobile-web-app-capable" content="yes" />
+<title>Tip — USD / DKK</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0B0D;
+    --panel: #141417;
+    --panel-2: #1A1A1E;
+    --raised: #202024;
+    --raised-hover: #26262B;
+    --line: rgba(255,255,255,0.055);
+    --line-strong: rgba(255,255,255,0.10);
+    --ink: #F4F1E8;
+    --ink-dim: rgba(244,241,232,0.58);
+    --ink-mute: rgba(244,241,232,0.32);
+    --ink-faint: rgba(244,241,232,0.18);
+    --gold: #C9A84C;
+    --gold-soft: rgba(201,168,76,0.18);
+    --gold-glow: rgba(201,168,76,0.35);
+    --danger: #C95C4C;
+
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; height: 100%; background: #000; }
+  body {
+    font-family: 'Roboto', system-ui, sans-serif;
+    color: var(--ink);
+    overflow: hidden;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+  }
+
+  /* The app shell — fluid on phone, capped on desktop */
+  .app {
+    width: 100%;
+    max-width: 430px;
+    height: 100dvh;
+    min-height: 100%;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(120% 60% at 50% -10%, rgba(201,168,76,0.05), transparent 60%),
+      radial-gradient(80% 50% at 50% 110%, rgba(201,168,76,0.025), transparent 60%),
+      var(--bg);
+  }
+
+  /* On wider viewports (PC / tablet) give the app a framed card feel */
+  @media (min-width: 500px) {
+    body { background: #050505; align-items: center; }
+    .app {
+      height: 100dvh;
+      max-height: 900px;
+      border-radius: 6px;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.07),
+        0 24px 80px rgba(0,0,0,0.85);
+      margin: auto;
+    }
+  }
+
+  /* ====================== HEADER ======================= */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: calc(14px + var(--safe-top)) 20px 10px;
+    flex-shrink: 0;
+  }
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .brand .mark {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    color: var(--gold);
+  }
+  .brand .sep {
+    width: 14px; height: 1px; background: var(--line-strong); display: inline-block;
+    transform: translateY(-3px);
+  }
+  .brand .sub {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+  }
+
+  .rate-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px 6px 9px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--ink-dim);
+    cursor: pointer;
+    transition: background 120ms, border-color 120ms;
+  }
+  .rate-badge:hover, .rate-badge:active { background: var(--panel-2); border-color: var(--line-strong); }
+  .rate-badge .dot {
+    width: 5px; height: 5px; background: var(--gold); border-radius: 50%;
+    box-shadow: 0 0 6px var(--gold-glow);
+  }
+  .rate-badge .pair { color: var(--ink-mute); }
+  .rate-badge .val { color: var(--ink); font-weight: 500; }
+
+  /* ====================== FIELDS ======================= */
+  .fields {
+    flex: 1 1 50%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 0 14px 8px;
+    gap: 6px;
+  }
+
+  .row {
+    display: flex;
+    gap: 6px;
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
+  .field {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.025),
+      inset 0 -1px 0 rgba(0,0,0,0.4);
+    cursor: pointer;
+    transition: background 140ms, border-color 140ms;
+  }
+  .field.readonly { cursor: default; }
+
+  .cell {
+    flex: 1;
+    min-width: 0;
+    padding: 9px 14px 10px;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    row-gap: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .cell-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+    gap: 2px;
+  }
+  .cell.align-right .cell-body { align-items: flex-end; text-align: right; }
+  .cell.align-left  .cell-body { align-items: flex-start; }
+
+  .cell::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--gold);
+    opacity: 0;
+    transition: opacity 160ms ease;
+  }
+  .cell.focused {
+    background: linear-gradient(90deg, rgba(201,168,76,0.06), rgba(201,168,76,0) 60%);
+  }
+  .field:has(.cell.focused) {
+    border-color: rgba(201,168,76,0.35);
+  }
+  .cell.focused::before { opacity: 1; }
+  .cell.focused .label { color: var(--gold); }
+
+  .label {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
+    font-size: 9.5px;
+    letter-spacing: 0.24em;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1;
+    height: 11px;
+  }
+  .label .caret {
+    width: 4px; height: 4px; background: var(--gold);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 160ms;
+    box-shadow: 0 0 6px var(--gold-glow);
+  }
+  .cell.focused .label .caret { opacity: 1; }
+
+  .amount-stack { display: flex; flex-direction: column; gap: 2px; min-width: 0; width: 100%; }
+  .cell.align-right .amount-stack { align-items: flex-end; }
+
+  .primary {
+    font-family: 'Roboto Mono', monospace;
+    font-feature-settings: "tnum" 1, "zero" 1;
+    font-weight: 400;
+    font-size: 24px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .secondary {
+    font-family: 'Roboto Mono', monospace;
+    font-feature-settings: "tnum" 1;
+    font-weight: 300;
+    font-size: 12px;
+    color: var(--ink-mute);
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Total field — accented */
+  .field.total {
+    background:
+      linear-gradient(180deg, rgba(201,168,76,0.05), rgba(201,168,76,0) 60%),
+      var(--panel);
+    border-color: rgba(201,168,76,0.22);
+  }
+  .field.total .label { color: var(--gold); }
+  .field.total .primary {
+    font-size: 28px;
+    color: #F8EFD2;
+    font-weight: 500;
+  }
+  .field.total .secondary { color: rgba(244,241,232,0.5); font-size: 12.5px; }
+  .field.total::after {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    pointer-events: none;
+    border: 1px solid transparent;
+    background:
+      linear-gradient(90deg, var(--gold) 0, var(--gold) 12px, transparent 12px) top left/100% 1px no-repeat,
+      linear-gradient(90deg, transparent calc(100% - 12px), var(--gold) calc(100% - 12px)) top right/100% 1px no-repeat,
+      linear-gradient(0deg, var(--gold) 0, var(--gold) 12px, transparent 12px) bottom left/1px 100% no-repeat,
+      linear-gradient(0deg, transparent calc(100% - 12px), var(--gold) calc(100% - 12px)) bottom right/1px 100% no-repeat;
+    opacity: 0.5;
+  }
+
+  .field.split {
+    flex-direction: row;
+    align-items: stretch;
+  }
+  .field.split > .cell + .cell {
+    border-left: 1px solid var(--line);
+  }
+
+  #f-tax-wrap > .cell:first-child { flex: 0 0 32%; }
+  #f-tax-wrap > .cell:last-child  { flex: 1 1 auto; }
+
+  #f-tip-wrap > .cell.tip-pct  { flex: 0 0 25%; }
+  #f-tip-wrap > .cell.tip-mid  {
+    flex: 1 1 auto;
+    padding: 6px 6px;
+    display: flex;
+    align-items: stretch;
+    grid-template-rows: 1fr;
+  }
+  #f-tip-wrap > .cell.tip-amt  { flex: 0 0 36%; }
+
+  .pct-display {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 400;
+    font-size: 24px;
+    color: var(--ink);
+    line-height: 1.1;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+  }
+  .pct-display .sym {
+    font-size: 13px;
+    color: var(--ink-mute);
+    font-weight: 300;
+  }
+  .pct-display.suggested .sparkle {
+    color: var(--gold);
+    font-size: 11px;
+    margin-left: 4px;
+    display: inline-block;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+
+  /* Tip chip grid (2x2) */
+  .chip-grid {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 4px;
+  }
+  .chip {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    padding: 0 4px;
+    background: transparent;
+    color: var(--ink-mute);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    text-align: center;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: all 120ms;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    line-height: 1;
+  }
+  .chip .star {
+    color: var(--gold);
+    font-size: 9px;
+    opacity: 0.85;
+  }
+  .chip:hover { color: var(--ink-dim); border-color: var(--line-strong); }
+  .chip.active {
+    background: var(--gold-soft);
+    color: var(--gold);
+    border-color: rgba(201,168,76,0.55);
+  }
+  .chip.active .star { opacity: 1; }
+  .chip.smart {
+    color: rgba(201,168,76,0.7);
+    border-color: rgba(201,168,76,0.18);
+  }
+  .chip.smart .star { display: inline-block; }
+
+  .num-anim {
+    display: inline-block;
+    transition: transform 220ms cubic-bezier(.2,.7,.2,1), opacity 220ms;
+  }
+  .num-anim.flash {
+    animation: numFlash 320ms ease;
+  }
+  @keyframes numFlash {
+    0%   { transform: translateY(6px); opacity: 0; }
+    60%  { transform: translateY(-1px); opacity: 1; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.55; transform: scale(0.9); }
+  }
+
+  /* ====================== KEYPAD ======================= */
+  .keypad-wrap {
+    flex: 1 1 50%;
+    min-height: 0;
+    padding: 8px 14px calc(14px + var(--safe-bottom));
+    display: flex;
+    flex-direction: column;
+  }
+  .keypad {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 6px;
+    min-height: 0;
+  }
+  .key {
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    color: var(--ink);
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 400;
+    font-size: 24px;
+    cursor: pointer;
+    touch-action: manipulation;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 80ms ease, background 120ms, border-color 120ms, filter 120ms;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.04),
+      0 1px 0 rgba(0,0,0,0.5);
+    position: relative;
+  }
+  .key:hover { background: var(--raised-hover); }
+  .key:active, .key.pressed {
+    transform: scale(0.96);
+    background: #2C2C32;
+    filter: brightness(1.15);
+  }
+  .key.fn {
+    font-size: 18px;
+    color: var(--ink-dim);
+  }
+  .key.fn-amber {
+    color: var(--gold);
+  }
+  .key.back svg, .key.clear svg { stroke: currentColor; }
+
+  /* ====================== EXCHANGE EDITOR (modal sheet) ======================= */
+  .sheet-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms;
+    z-index: 10;
+  }
+  .sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+
+  .sheet {
+    position: absolute;
+    left: 14px; right: 14px;
+    bottom: calc(14px + var(--safe-bottom));
+    background: var(--panel-2);
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    padding: 18px;
+    z-index: 11;
+    transform: translateY(20px);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 200ms cubic-bezier(.2,.7,.2,1), opacity 180ms;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  }
+  .sheet.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+  .sheet h3 {
+    margin: 0 0 4px;
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 500;
+  }
+  .sheet p {
+    margin: 0 0 16px;
+    font-size: 12px;
+    color: var(--ink-mute);
+    line-height: 1.5;
+  }
+  .rate-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .rate-row .lbl {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-dim);
+    letter-spacing: 0.04em;
+    min-width: 38px;
+  }
+  .rate-row input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    color: var(--ink);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 18px;
+    padding: 10px 12px;
+    outline: none;
+    text-align: right;
+    transition: border-color 120ms;
+  }
+  .rate-row input:focus { border-color: var(--gold); }
+  .ccy-select {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    color: var(--ink);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink-mute) 50%),
+                      linear-gradient(135deg, var(--ink-mute) 50%, transparent 50%);
+    background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 32px;
+    transition: border-color 120ms;
+  }
+  .ccy-select:focus { border-color: var(--gold); }
+  .sheet-actions { display: flex; gap: 8px; }
+  .btn {
+    flex: 1;
+    padding: 11px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 1px solid var(--line-strong);
+    background: transparent;
+    color: var(--ink-dim);
+    transition: all 120ms;
+    font-weight: 500;
+  }
+  .btn:hover { background: var(--raised); color: var(--ink); }
+  .btn.primary {
+    background: var(--gold);
+    color: #1A1308;
+    border-color: var(--gold);
+    font-weight: 700;
+  }
+  .btn.primary:hover { filter: brightness(1.08); }
+
+  .tax-row .lbl { min-width: 64px; }
+
+  @media (max-height: 760px) {
+    .primary { font-size: 22px; }
+    .field.total .primary { font-size: 26px; }
+    .pct-display { font-size: 22px; }
+    .key { font-size: 22px; }
+    .secondary { font-size: 11px; }
+  }
+  @media (max-height: 680px) {
+    .topbar { padding-top: calc(8px + var(--safe-top)); padding-bottom: 6px; }
+    .cell { padding: 7px 14px 8px; }
+    .key { font-size: 20px; }
+    .primary { font-size: 20px; }
+    .field.total .primary { font-size: 24px; }
+    .pct-display { font-size: 20px; }
+    .chip { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <span></span>
+    <button class="rate-badge" id="rateBadge" aria-label="Edit currency and exchange rate">
+      <span class="pair" id="rateBadgePair">USD/DKK</span>
+      <span class="val" id="rateBadgeVal">6.88</span>
+    </button>
+  </div>
+
+  <!-- Fields -->
+  <div class="fields">
+    <!-- Bill -->
+    <div class="row">
+      <div class="field" data-field="bill" id="f-bill">
+        <div class="cell align-right">
+          <div class="label">Before Tip <span class="caret"></span></div>
+          <div class="cell-body">
+            <div class="amount-stack">
+              <div class="primary"><span class="num-anim" id="bill-usd">$0.00</span></div>
+              <div class="secondary"><span class="num-anim" id="bill-dkk">0,00 kr.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tax (split: 32 / 68) -->
+    <div class="row">
+      <div class="field split" id="f-tax-wrap">
+        <div class="cell align-left" data-field="tax" id="f-tax">
+          <div class="label">Tax Rate <span class="caret"></span></div>
+          <div class="cell-body">
+            <div class="pct-display"><span class="num-anim" id="tax-rate">8.375</span><span class="sym">%</span></div>
+          </div>
+        </div>
+        <div class="cell align-right readonly">
+          <div class="label">Tax</div>
+          <div class="cell-body">
+            <div class="amount-stack">
+              <div class="primary"><span class="num-anim" id="tax-usd">$0.00</span></div>
+              <div class="secondary"><span class="num-anim" id="tax-dkk">0,00 kr.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Before tax -->
+    <div class="row">
+      <div class="field" data-field="pre" id="f-pre">
+        <div class="cell align-right">
+          <div class="label">Before Tax <span class="caret"></span></div>
+          <div class="cell-body">
+            <div class="amount-stack">
+              <div class="primary"><span class="num-anim" id="pre-usd">$0.00</span></div>
+              <div class="secondary"><span class="num-anim" id="pre-dkk">0,00 kr.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tip (split: 25 / mid / 36) -->
+    <div class="row">
+      <div class="field split" id="f-tip-wrap">
+        <div class="cell align-left tip-pct" data-field="tip" id="f-tip">
+          <div class="label">Tip <span class="caret"></span></div>
+          <div class="cell-body">
+            <div class="pct-display" id="tip-pct-wrap"><span class="num-anim" id="tip-pct">0</span><span class="sym">%</span><span class="sparkle" id="tip-sparkle" style="display:none">✦</span></div>
+          </div>
+        </div>
+        <div class="cell tip-mid">
+          <div class="chip-grid" id="tip-chips">
+            <button class="chip"       data-mode="exact" data-target="15">15</button>
+            <button class="chip smart" data-mode="smart" data-target="15"><span class="star">✦</span>15</button>
+            <button class="chip"       data-mode="exact" data-target="20">20</button>
+            <button class="chip smart" data-mode="smart" data-target="20"><span class="star">✦</span>20</button>
+          </div>
+        </div>
+        <div class="cell align-right tip-amt readonly">
+          <div class="label">Tip</div>
+          <div class="cell-body">
+            <div class="amount-stack">
+              <div class="primary"><span class="num-anim" id="tip-usd">$0.00</span></div>
+              <div class="secondary"><span class="num-anim" id="tip-dkk">0,00 kr.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total -->
+    <div class="row">
+      <div class="field total readonly">
+        <div class="cell align-right">
+          <div class="label">Total</div>
+          <div class="cell-body">
+            <div class="amount-stack">
+              <div class="primary"><span class="num-anim" id="total-usd">$0.00</span></div>
+              <div class="secondary"><span class="num-anim" id="total-dkk">0,00 kr.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keypad -->
+  <div class="keypad-wrap">
+    <div class="keypad" id="keypad">
+      <button class="key" data-k="1">1</button>
+      <button class="key" data-k="2">2</button>
+      <button class="key" data-k="3">3</button>
+      <button class="key fn" data-k="clear">C</button>
+
+      <button class="key" data-k="4">4</button>
+      <button class="key" data-k="5">5</button>
+      <button class="key" data-k="6">6</button>
+      <button class="key fn back" data-k="back" aria-label="Delete">
+        <svg width="22" height="16" viewBox="0 0 22 16" fill="none">
+          <path d="M7 1 L21 1 L21 15 L7 15 L1 8 Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+          <path d="M11 5 L16 11 M16 5 L11 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <button class="key" data-k="7">7</button>
+      <button class="key" data-k="8">8</button>
+      <button class="key" data-k="9">9</button>
+      <button class="key fn fn-amber" data-k="up" aria-label="Previous field">
+        <svg width="18" height="22" viewBox="0 0 18 22" fill="none">
+          <path d="M9 21 V3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 9 L9 2 L16 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <button class="key" data-k="." style="grid-column: 1 / 2">.</button>
+      <button class="key" data-k="0" style="grid-column: 2 / 4">0</button>
+      <button class="key fn fn-amber" data-k="down" aria-label="Next field">
+        <svg width="18" height="22" viewBox="0 0 18 22" fill="none">
+          <path d="M9 1 V19" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 13 L9 20 L16 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Exchange rate sheet -->
+  <div class="sheet-backdrop" id="rateBackdrop"></div>
+  <div class="sheet" id="rateSheet" role="dialog" aria-modal="true">
+    <h3>Currency &amp; Rate</h3>
+    <p>Pick the currency pair and conversion. Stored locally on this device.</p>
+    <div class="rate-row">
+      <span class="lbl">From</span>
+      <select id="primarySelect" class="ccy-select"></select>
+    </div>
+    <div class="rate-row">
+      <span class="lbl">To</span>
+      <select id="secondarySelect" class="ccy-select"></select>
+    </div>
+    <div class="rate-row">
+      <span class="lbl" id="rateLabel">1 USD =</span>
+      <input type="text" inputmode="decimal" id="rateInput" value="6.88" />
+      <span class="lbl" id="rateSuffix" style="min-width: 32px; text-align: right;">DKK</span>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn" id="rateCancel">Cancel</button>
+      <button class="btn primary" id="rateSave">Save</button>
+    </div>
+  </div>
+
+  <!-- Tax editor sheet -->
+  <div class="sheet-backdrop" id="taxBackdrop"></div>
+  <div class="sheet" id="taxSheet" role="dialog" aria-modal="true">
+    <h3>Tax Rate</h3>
+    <p>The sales tax already included in your bill. Used to derive the pre-tax subtotal.</p>
+    <div class="rate-row tax-row">
+      <span class="lbl">Rate</span>
+      <input type="text" inputmode="decimal" id="taxInput" value="8.375" />
+      <span class="lbl" style="min-width: 16px; text-align: right;">%</span>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn" id="taxCancel">Cancel</button>
+      <button class="btn primary" id="taxSave">Save</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* =========================================================
+   STATE
+   ========================================================= */
+const LS = {
+  TAX:  'tip_tax_rate_v2',
+  RATE: 'tip_fx_rate_v2',
+  PRI:  'tip_primary_ccy_v2',
+  SEC:  'tip_secondary_ccy_v2',
+  TMODE:'tip_mode_v2',
+  TTGT: 'tip_target_v2',
+};
+
+const CCY = {
+  USD: { code: 'USD', name: 'US Dollar',       locale: 'en-US', prefix: '$',    suffix: '',     thou: ',', dec: '.' },
+  DKK: { code: 'DKK', name: 'Danish Krone',    locale: 'da-DK', prefix: '',     suffix: ' kr.', thou: '.', dec: ',' },
+  EUR: { code: 'EUR', name: 'Euro',            locale: 'de-DE', prefix: '€',    suffix: '',     thou: '.', dec: ',' },
+  GBP: { code: 'GBP', name: 'British Pound',   locale: 'en-GB', prefix: '£',    suffix: '',     thou: ',', dec: '.' },
+  SEK: { code: 'SEK', name: 'Swedish Krona',   locale: 'sv-SE', prefix: '',     suffix: ' kr',  thou: ' ', dec: ',' },
+  NOK: { code: 'NOK', name: 'Norwegian Krone', locale: 'nb-NO', prefix: '',     suffix: ' kr',  thou: ' ', dec: ',' },
+  CHF: { code: 'CHF', name: 'Swiss Franc',     locale: 'de-CH', prefix: 'CHF ', suffix: '',     thou: '’', dec: '.' },
+  JPY: { code: 'JPY', name: 'Japanese Yen',    locale: 'ja-JP', prefix: '¥',    suffix: '',     thou: ',', dec: '.', noDecimals: true },
+  CAD: { code: 'CAD', name: 'Canadian Dollar', locale: 'en-CA', prefix: 'C$',   suffix: '',     thou: ',', dec: '.' },
+  AUD: { code: 'AUD', name: 'Australian Dollar', locale: 'en-AU', prefix: 'A$', suffix: '',     thou: ',', dec: '.' },
+};
+
+function clampNum(v, lo, hi, fb) {
+  if (!isFinite(v)) return fb;
+  return Math.max(lo, Math.min(hi, v));
+}
+
+const _pri = localStorage.getItem(LS.PRI);
+const _sec = localStorage.getItem(LS.SEC);
+const _tm  = localStorage.getItem(LS.TMODE);
+const _tt  = parseFloat(localStorage.getItem(LS.TTGT));
+const state = {
+  billBuf: '',
+  preBuf: '',
+  mode: 'bill',
+  taxRate: clampNum(parseFloat(localStorage.getItem(LS.TAX)), 0, 100, 8.375),
+  fxRate:  clampNum(parseFloat(localStorage.getItem(LS.RATE)), 0.0001, 100000, 6.88),
+  primary:   (CCY[_pri] ? _pri : 'USD'),
+  secondary: (CCY[_sec] ? _sec : 'DKK'),
+  tipMode:   (_tm === 'exact' || _tm === 'smart') ? _tm : 'smart',
+  tipTarget: (_tt === 15 || _tt === 20) ? _tt : 20,
+  tipBuf: '',
+  tipPct: 0,
+  focus: 'bill',
+};
+
+/* =========================================================
+   FORMATTERS
+   ========================================================= */
+function fmtCcy(v, code) {
+  const c = CCY[code] || CCY.USD;
+  const n = isFinite(v) ? v : 0;
+  const decimals = c.noDecimals ? 0 : 2;
+  const abs = Math.abs(n);
+  const fixed = abs.toFixed(decimals);
+  const [intRaw, decPart = ''] = fixed.split('.');
+  const intGrouped = intRaw.replace(/\B(?=(\d{3})+(?!\d))/g, c.thou);
+  let num = intGrouped;
+  if (decimals > 0) num += c.dec + decPart;
+  const sign = n < 0 ? '−' : '';
+  return sign + c.prefix + num + c.suffix;
+}
+function fmtPri(v) { return fmtCcy(v, state.primary); }
+function fmtSec(v) { return fmtCcy(v, state.secondary); }
+
+function fmtPct(v, maxDecimals) {
+  if (maxDecimals === undefined) maxDecimals = 1;
+  const k = Math.pow(10, maxDecimals);
+  const r = Math.round(v * k) / k;
+  let s = r.toFixed(maxDecimals);
+  s = s.replace(/0+$/, '').replace(/\.$/, '');
+  return s || '0';
+}
+
+/* =========================================================
+   PARSING
+   ========================================================= */
+function bufToNum(buf) {
+  if (!buf) return 0;
+  const n = parseFloat(buf);
+  return isFinite(n) ? n : 0;
+}
+
+/* =========================================================
+   COMPUTE
+   ========================================================= */
+function smartTipFor(bill, targetPct) {
+  if (bill <= 0) return targetPct;
+  const desired = bill * (1 + targetPct / 100);
+
+  if (targetPct === 20) {
+    // Nearest whole dollar to 20%; ties (exactly X.50) go to floor (cheaper).
+    // If this ties with smart 15, that's honest: the bill is too small for a
+    // clean whole-dollar distinction between 15% and 20%.
+    const useTotal = Math.floor(desired + 0.5 - 1e-9);
+    return ((useTotal - bill) / bill) * 100;
+  }
+
+  // Smart 15: always ceil so the total is at least 15%.
+  const roundedTotal = Math.ceil(desired - 1e-9);
+  return ((roundedTotal - bill) / bill) * 100;
+}
+
+function compute() {
+  const taxR = state.taxRate / 100;
+  let bill, preTax;
+  if (state.mode === 'pre') {
+    preTax = bufToNum(state.preBuf);
+    bill   = preTax * (1 + taxR);
+  } else {
+    bill   = bufToNum(state.billBuf);
+    preTax = bill / (1 + taxR);
+  }
+  const tax = bill - preTax;
+
+  let tipPct;
+  let tipIsSmart = false;
+  if (state.focus === 'tip' && state.tipBuf !== '') {
+    tipPct = bufToNum(state.tipBuf);
+  } else if (state.tipMode === 'smart') {
+    tipPct = smartTipFor(bill, state.tipTarget);
+    tipIsSmart = true;
+  } else {
+    tipPct = state.tipTarget;
+  }
+  state.tipPct = tipPct;
+
+  const tipAmt = bill * (tipPct / 100);
+  const total = bill + tipAmt;
+
+  return { bill, preTax, tax, tipPct, tipAmt, total, tipIsSmart };
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+const $ = (id) => document.getElementById(id);
+
+const lastVals = {};
+function setText(id, val) {
+  const el = $(id);
+  if (!el) return;
+  if (lastVals[id] !== val) {
+    el.textContent = val;
+    el.classList.remove('flash');
+    void el.offsetWidth;
+    el.classList.add('flash');
+    lastVals[id] = val;
+  }
+}
+
+function render() {
+  const c = compute();
+  const fx = state.fxRate;
+
+  let billDisplay;
+  if (state.focus === 'bill' && state.billBuf !== '') {
+    billDisplay = displayBuf(state.billBuf, state.primary);
+  } else {
+    billDisplay = fmtPri(c.bill);
+  }
+  setText('bill-usd', billDisplay);
+  setText('bill-dkk', fmtSec(c.bill * fx));
+
+  if (state.focus === 'tax' && state._taxBuf !== undefined && state._taxBuf !== '') {
+    setText('tax-rate', state._taxBuf);
+  } else {
+    setText('tax-rate', fmtPct(state.taxRate, 3));
+  }
+  setText('tax-usd', fmtPri(c.tax));
+  setText('tax-dkk', fmtSec(c.tax * fx));
+
+  let preDisplay;
+  if (state.focus === 'pre' && state.preBuf !== '') {
+    preDisplay = displayBuf(state.preBuf, state.primary);
+  } else {
+    preDisplay = fmtPri(c.preTax);
+  }
+  setText('pre-usd', preDisplay);
+  setText('pre-dkk', fmtSec(c.preTax * fx));
+
+  let tipPctText;
+  if (state.focus === 'tip' && state.tipBuf !== '') {
+    tipPctText = state.tipBuf;
+  } else {
+    tipPctText = fmtPct(c.tipPct);
+  }
+  setText('tip-pct', tipPctText);
+  setText('tip-usd', fmtPri(c.tipAmt));
+  setText('tip-dkk', fmtSec(c.tipAmt * fx));
+
+  const sparkle = $('tip-sparkle');
+  const tipPctWrap = $('tip-pct-wrap');
+  if (c.tipIsSmart && c.bill > 0) {
+    sparkle.style.display = 'inline';
+    tipPctWrap.classList.add('suggested');
+  } else {
+    sparkle.style.display = 'none';
+    tipPctWrap.classList.remove('suggested');
+  }
+
+  setText('total-usd', fmtPri(c.total));
+  setText('total-dkk', fmtSec(c.total * fx));
+
+  const chips = document.querySelectorAll('#tip-chips .chip');
+  const usingChips = state.tipBuf === '';
+  chips.forEach(ch => {
+    const mode = ch.dataset.mode;
+    const target = parseFloat(ch.dataset.target);
+    if (usingChips && mode === state.tipMode && target === state.tipTarget) {
+      ch.classList.add('active');
+    } else {
+      ch.classList.remove('active');
+    }
+  });
+
+  setText('rateBadgePair', state.primary + '/' + state.secondary);
+  setText('rateBadgeVal', formatRateNumber(state.fxRate));
+
+  document.querySelectorAll('.cell.focused').forEach(el => el.classList.remove('focused'));
+  if (state.focus === 'bill') $('f-bill').querySelector('.cell').classList.add('focused');
+  if (state.focus === 'pre')  $('f-pre').querySelector('.cell').classList.add('focused');
+  if (state.focus === 'tax')  $('f-tax').classList.add('focused');
+  if (state.focus === 'tip')  $('f-tip').classList.add('focused');
+}
+
+function formatRateNumber(r) {
+  if (r >= 100)  return r.toFixed(1);
+  if (r >= 1)    return r.toFixed(2);
+  return r.toFixed(4);
+}
+
+function displayBuf(buf, code) {
+  const c = CCY[code] || CCY.USD;
+  if (!buf) return fmtCcy(0, code);
+  const hasDot = buf.includes('.');
+  let intPart, decPart;
+  if (hasDot) {
+    const idx = buf.indexOf('.');
+    intPart = buf.slice(0, idx) || '0';
+    decPart = buf.slice(idx + 1).slice(0, 2);
+  } else {
+    intPart = buf;
+    decPart = '';
+  }
+  intPart = intPart.replace(/^0+(?=\d)/, '');
+  if (intPart === '') intPart = '0';
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, c.thou);
+  let out = c.prefix + grouped;
+  if (hasDot && !c.noDecimals) out += c.dec + decPart;
+  out += c.suffix;
+  return out;
+}
+
+/* =========================================================
+   INPUT HANDLERS
+   ========================================================= */
+function pressKey(k) {
+  if (k === 'clear') {
+    if (state.focus === 'bill') { state.billBuf = ''; state.mode = 'bill'; }
+    if (state.focus === 'pre')  { state.preBuf = '';  state.mode = 'pre';  }
+    if (state.focus === 'tip')  { state.tipBuf = ''; }
+    if (state.focus === 'tax')  { state._taxBuf = ''; }
+    render();
+    return;
+  }
+  if (k === 'back') {
+    if (state.focus === 'bill') state.billBuf = state.billBuf.slice(0, -1);
+    if (state.focus === 'pre')  state.preBuf  = state.preBuf.slice(0, -1);
+    if (state.focus === 'tip')  state.tipBuf  = state.tipBuf.slice(0, -1);
+    if (state.focus === 'tax')  state._taxBuf = (state._taxBuf || '').slice(0, -1);
+    render();
+    return;
+  }
+  if (k === 'up' || k === 'down') {
+    const order = ['bill', 'tax', 'pre', 'tip'];
+    const idx = order.indexOf(state.focus);
+    const next = k === 'down'
+      ? (idx + 1) % order.length
+      : (idx - 1 + order.length) % order.length;
+    commitBuffers();
+    setFocus(order[next]);
+    return;
+  }
+  appendChar(k);
+}
+
+function appendChar(ch) {
+  const isDot = ch === '.';
+  if (state.focus === 'bill') {
+    if (isDot && state.billBuf.includes('.')) return;
+    if (!isDot && state.billBuf.includes('.') && state.billBuf.split('.')[1].length >= 2) return;
+    if (state.billBuf.length >= 10) return;
+    if (state.billBuf === '' && isDot) state.billBuf = '0';
+    state.billBuf += ch;
+    state.mode = 'bill';
+  } else if (state.focus === 'pre') {
+    if (isDot && state.preBuf.includes('.')) return;
+    if (!isDot && state.preBuf.includes('.') && state.preBuf.split('.')[1].length >= 2) return;
+    if (state.preBuf.length >= 10) return;
+    if (state.preBuf === '' && isDot) state.preBuf = '0';
+    state.preBuf += ch;
+    state.mode = 'pre';
+  } else if (state.focus === 'tip') {
+    if (isDot && state.tipBuf.includes('.')) return;
+    if (!isDot && state.tipBuf.includes('.') && state.tipBuf.split('.')[1].length >= 1) return;
+    if (state.tipBuf.length >= 5) return;
+    if (state.tipBuf === '' && isDot) state.tipBuf = '0';
+    state.tipBuf += ch;
+  } else if (state.focus === 'tax') {
+    if (state._taxBuf === undefined) state._taxBuf = '';
+    if (isDot && state._taxBuf.includes('.')) return;
+    if (!isDot && state._taxBuf.includes('.') && state._taxBuf.split('.')[1].length >= 3) return;
+    if (state._taxBuf.length >= 6) return;
+    if (state._taxBuf === '' && isDot) state._taxBuf = '0';
+    state._taxBuf += ch;
+  }
+  render();
+}
+
+function commitBuffers() {
+  if (state.tipBuf !== '') {
+    const n = parseFloat(state.tipBuf);
+    if (isFinite(n)) {
+      state.tipMode = 'exact';
+      state.tipTarget = clampNum(n, 0, 100, 0);
+      localStorage.setItem(LS.TMODE, state.tipMode);
+      localStorage.setItem(LS.TTGT, String(state.tipTarget));
+    }
+    state.tipBuf = '';
+  }
+  if (state._taxBuf !== undefined && state._taxBuf !== '') {
+    const n = parseFloat(state._taxBuf);
+    if (isFinite(n)) {
+      state.taxRate = clampNum(n, 0, 100, state.taxRate);
+      localStorage.setItem(LS.TAX, String(state.taxRate));
+    }
+    state._taxBuf = '';
+  }
+}
+
+function setFocus(f) {
+  commitBuffers();
+  state.focus = f;
+  render();
+}
+
+/* =========================================================
+   WIRE UP
+   ========================================================= */
+document.querySelectorAll('.key').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const k = btn.dataset.k;
+    btn.classList.add('pressed');
+    setTimeout(() => btn.classList.remove('pressed'), 90);
+    pressKey(k);
+  });
+});
+
+$('f-bill').addEventListener('click', () => setFocus('bill'));
+$('f-pre').addEventListener('click',  () => setFocus('pre'));
+$('f-tax').addEventListener('click',  () => setFocus('tax'));
+$('f-tip').addEventListener('click',  () => setFocus('tip'));
+
+document.querySelectorAll('#tip-chips .chip').forEach(ch => {
+  ch.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const mode   = ch.dataset.mode;
+    const target = parseFloat(ch.dataset.target);
+    state.tipMode = mode;
+    state.tipTarget = target;
+    state.tipBuf = '';
+    localStorage.setItem(LS.TMODE, state.tipMode);
+    localStorage.setItem(LS.TTGT, String(state.tipTarget));
+    render();
+  });
+});
+
+window.addEventListener('keydown', (e) => {
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) {
+    return;
+  }
+  if (e.key >= '0' && e.key <= '9') { pressKey(e.key); e.preventDefault(); }
+  else if (e.key === '.') { pressKey('.'); e.preventDefault(); }
+  else if (e.key === 'Backspace') { pressKey('back'); e.preventDefault(); }
+  else if (e.key === 'Delete' || e.key.toLowerCase() === 'c') { pressKey('clear'); }
+  else if (e.key === 'ArrowDown' || e.key === 'Tab') { pressKey('down'); e.preventDefault(); }
+  else if (e.key === 'ArrowUp')   { pressKey('up'); e.preventDefault(); }
+  else if (e.key === 'Enter')     { pressKey('down'); }
+});
+
+/* ========= Rate sheet ========= */
+const rateBackdrop = $('rateBackdrop');
+const rateSheet = $('rateSheet');
+const primarySelect = $('primarySelect');
+const secondarySelect = $('secondarySelect');
+
+function populateCurrencySelects() {
+  const codes = Object.keys(CCY);
+  [primarySelect, secondarySelect].forEach(sel => {
+    sel.innerHTML = '';
+    codes.forEach(code => {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = code + ' — ' + CCY[code].name;
+      sel.appendChild(opt);
+    });
+  });
+}
+populateCurrencySelects();
+
+function updateRateSheetLabels() {
+  $('rateLabel').textContent  = '1 ' + primarySelect.value + ' =';
+  $('rateSuffix').textContent = secondarySelect.value;
+}
+
+function openRateSheet() {
+  primarySelect.value   = state.primary;
+  secondarySelect.value = state.secondary;
+  updateRateSheetLabels();
+  $('rateInput').value  = formatRateNumber(state.fxRate);
+  rateBackdrop.classList.add('open');
+  rateSheet.classList.add('open');
+}
+function closeRateSheet() {
+  rateBackdrop.classList.remove('open');
+  rateSheet.classList.remove('open');
+}
+primarySelect.addEventListener('change', () => {
+  if (primarySelect.value === secondarySelect.value) {
+    secondarySelect.value = state.primary;
+  }
+  updateRateSheetLabels();
+});
+secondarySelect.addEventListener('change', () => {
+  if (secondarySelect.value === primarySelect.value) {
+    primarySelect.value = state.secondary;
+  }
+  updateRateSheetLabels();
+});
+$('rateBadge').addEventListener('click', openRateSheet);
+rateBackdrop.addEventListener('click', closeRateSheet);
+$('rateCancel').addEventListener('click', closeRateSheet);
+$('rateSave').addEventListener('click', () => {
+  const n = parseFloat($('rateInput').value);
+  state.primary   = primarySelect.value;
+  state.secondary = secondarySelect.value;
+  if (isFinite(n) && n > 0) {
+    state.fxRate = clampNum(n, 0.0001, 100000, state.fxRate);
+  }
+  localStorage.setItem(LS.PRI,  state.primary);
+  localStorage.setItem(LS.SEC,  state.secondary);
+  localStorage.setItem(LS.RATE, String(state.fxRate));
+  render();
+  closeRateSheet();
+});
+
+/* ========= Tax sheet ========= */
+const taxBackdrop = $('taxBackdrop');
+const taxSheet = $('taxSheet');
+function openTaxSheet() {
+  $('taxInput').value = fmtPct(state.taxRate);
+  taxBackdrop.classList.add('open');
+  taxSheet.classList.add('open');
+  setTimeout(() => $('taxInput').focus(), 200);
+}
+function closeTaxSheet() {
+  taxBackdrop.classList.remove('open');
+  taxSheet.classList.remove('open');
+}
+let taxPressTimer = null;
+$('f-tax').addEventListener('pointerdown', (e) => {
+  taxPressTimer = setTimeout(() => { taxPressTimer = null; openTaxSheet(); }, 500);
+});
+$('f-tax').addEventListener('pointerup', () => { if (taxPressTimer) { clearTimeout(taxPressTimer); taxPressTimer = null; } });
+$('f-tax').addEventListener('pointerleave', () => { if (taxPressTimer) { clearTimeout(taxPressTimer); taxPressTimer = null; } });
+taxBackdrop.addEventListener('click', closeTaxSheet);
+$('taxCancel').addEventListener('click', closeTaxSheet);
+$('taxSave').addEventListener('click', () => {
+  const n = parseFloat($('taxInput').value);
+  if (isFinite(n) && n >= 0) {
+    state.taxRate = clampNum(n, 0, 100, state.taxRate);
+    localStorage.setItem(LS.TAX, String(state.taxRate));
+    render();
+  }
+  closeTaxSheet();
+});
+
+// Initial render
+render();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
