@@ -1249,19 +1249,26 @@ render();
 async function fetchLiveRate() {
   const lastFetch = parseInt(localStorage.getItem('tip_rate_fetched') || '0', 10);
   if (Date.now() - lastFetch < 86_400_000) return;
-  try {
-    const res = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json');
-    const data = await res.json();
-    const rate = data?.usd?.dkk;
-    if (rate && isFinite(rate)) {
-      state.fxRate = rate;
-      localStorage.setItem(LS.RATE, String(rate));
-      localStorage.setItem('tip_rate_fetched', String(Date.now()));
-      render();
-      const el = $('rateLastUpdated');
-      if (el) el.textContent = 'Live rate from ' + new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
-    }
-  } catch (_) {}
+  const endpoints = [
+    'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json',
+    'https://latest.currency-api.pages.dev/v1/currencies/usd.json',
+  ];
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      const rate = data?.usd?.dkk;
+      if (rate && isFinite(rate)) {
+        state.fxRate = rate;
+        localStorage.setItem(LS.RATE, String(rate));
+        localStorage.setItem('tip_rate_fetched', String(Date.now()));
+        render();
+        const el = $('rateLastUpdated');
+        if (el) el.textContent = 'Live rate from ' + new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+        return;
+      }
+    } catch (_) {}
+  }
 }
 fetchLiveRate();
 </script>
