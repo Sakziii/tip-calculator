@@ -668,8 +668,8 @@
             <button class="chip smart" data-mode="smart" data-target="20"><span class="star">✦</span>20</button>
           </div>
         </div>
-        <div class="cell align-right tip-amt readonly">
-          <div class="label">Tip</div>
+        <div class="cell align-right tip-amt" id="tip-amt-cell" style="cursor:pointer;">
+          <div class="label">Tip <span id="tip-amt-mode" class="caret" style="opacity:1;border-radius:0;width:auto;height:auto;background:none;font-size:9px;letter-spacing:0.14em;color:var(--gold);box-shadow:none;">✦20</span></div>
           <div class="cell-body">
             <div class="amount-stack">
               <div class="primary"><span class="num-anim" id="tip-usd">$0.00</span></div>
@@ -971,6 +971,8 @@ function render() {
   setText('tip-pct', tipPctText);
   setText('tip-usd', fmtPri(c.tipAmt));
   setText('tip-dkk', fmtSec(c.tipAmt * fx));
+  const modeEl = document.getElementById('tip-amt-mode');
+  if (modeEl) modeEl.textContent = '✦' + state.tipTarget;
 
   const sparkle = $('tip-sparkle');
   const tipPctWrap = $('tip-pct-wrap');
@@ -1138,6 +1140,17 @@ document.querySelectorAll('.key').forEach(btn => {
     setTimeout(() => btn.classList.remove('pressed'), 90);
     pressKey(k);
   });
+});
+
+document.getElementById('tip-amt-cell').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const next = (state.tipMode === 'smart' && state.tipTarget === 15) ? 20 : 15;
+  state.tipMode = 'smart';
+  state.tipTarget = next;
+  state.tipBuf = '';
+  localStorage.setItem(LS.TMODE, state.tipMode);
+  localStorage.setItem(LS.TTGT, String(state.tipTarget));
+  render();
 });
 
 $('f-bill').addEventListener('click', () => setFocus('bill'));
