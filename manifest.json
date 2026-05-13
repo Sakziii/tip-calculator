@@ -2,7 +2,7 @@
   "name": "Tip Calculator",
   "short_name": "Tip",
   "description": "Smart tip calculator with currency conversion",
-  "start_url": "./index.html",
+  "start_url": "/tip-calculator/",
   "display": "standalone",
   "background_color": "#0B0B0D",
   "theme_color": "#0B0B0D",
