@@ -147,8 +147,10 @@
     flex: 1 1 0;
     min-height: 0;
   }
-  .row:has(#f-tax-wrap) { flex: 0.6 1 0; }
-  .row:has(#f-tip-wrap) { flex: 1.4 1 0; }
+  @media (min-width: 500px) {
+    .row:has(#f-tax-wrap) { flex: 0.6 1 0; }
+    .row:has(#f-tip-wrap) { flex: 1.4 1 0; }
+  }
 
   .field {
     position: relative;
