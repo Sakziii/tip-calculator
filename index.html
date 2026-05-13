@@ -60,8 +60,8 @@
       var(--bg);
   }
 
-  /* On wider viewports (PC / tablet) give the app a framed card feel */
-  @media (min-width: 500px) {
+  /* Tablet / small desktop: card feel, still portrait */
+  @media (min-width: 500px) and (max-width: 799px) {
     body { background: #050505; align-items: center; }
     .app {
       height: 100dvh;
@@ -71,6 +71,56 @@
         0 0 0 1px rgba(255,255,255,0.07),
         0 24px 80px rgba(0,0,0,0.85);
       margin: auto;
+    }
+  }
+
+  /* Desktop: side-by-side layout with square keypad */
+  @media (min-width: 800px) {
+    body { background: #050505; align-items: center; justify-content: center; }
+    .app {
+      flex-direction: row;
+      max-width: min(960px, 96vw);
+      width: min(960px, 96vw);
+      height: auto;
+      max-height: 90dvh;
+      border-radius: 8px;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.07),
+        0 24px 80px rgba(0,0,0,0.85);
+      margin: auto;
+      overflow: visible;
+    }
+    .topbar {
+      display: none;
+    }
+    .fields {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 24px 20px 24px 24px;
+      gap: 8px;
+      overflow-y: auto;
+      border-right: 1px solid var(--line);
+    }
+    .keypad-wrap {
+      flex: 0 0 auto;
+      width: min(420px, 44%);
+      padding: 20px 20px calc(20px + var(--safe-bottom)) 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+    }
+    /* Rate badge relocated inside keypad area on desktop */
+    .keypad-wrap::before {
+      content: '';
+    }
+    .keypad {
+      flex: 1;
+      grid-template-rows: none;
+      grid-auto-rows: auto;
+    }
+    .key {
+      aspect-ratio: 1;
     }
   }
 
@@ -561,6 +611,16 @@
 
   .tax-row .lbl { min-width: 64px; }
 
+  .keypad-topbar {
+    display: none;
+  }
+  @media (min-width: 800px) {
+    .keypad-topbar {
+      display: flex;
+      justify-content: flex-end;
+    }
+  }
+
   @media (max-height: 760px) {
     .primary { font-size: 22px; }
     .field.total .primary { font-size: 26px; }
@@ -692,6 +752,13 @@
 
   <!-- Keypad -->
   <div class="keypad-wrap">
+    <div class="keypad-topbar">
+      <button class="rate-badge" id="rateBadge2" aria-label="Edit currency and exchange rate" style="margin-bottom:12px;">
+        <span class="dot"></span>
+        <span class="pair" id="rateBadgePair2">USD/DKK</span>
+        <span class="val" id="rateBadgeVal2">6.88</span>
+      </button>
+    </div>
     <div class="keypad" id="keypad">
       <button class="key" data-k="1">1</button>
       <button class="key" data-k="2">2</button>
@@ -993,6 +1060,8 @@ function render() {
 
   setText('rateBadgePair', state.primary + '/' + state.secondary);
   setText('rateBadgeVal', formatRateNumber(state.fxRate));
+  setText('rateBadgePair2', state.primary + '/' + state.secondary);
+  setText('rateBadgeVal2', formatRateNumber(state.fxRate));
 
   document.querySelectorAll('.cell.focused').forEach(el => el.classList.remove('focused'));
   if (state.focus === 'bill') $('f-bill').querySelector('.cell').classList.add('focused');
@@ -1217,6 +1286,7 @@ secondarySelect.addEventListener('change', () => {
   updateRateSheetLabels();
 });
 $('rateBadge').addEventListener('click', openRateSheet);
+$('rateBadge2').addEventListener('click', openRateSheet);
 rateBackdrop.addEventListener('click', closeRateSheet);
 $('rateCancel').addEventListener('click', closeRateSheet);
 $('rateSave').addEventListener('click', () => {
