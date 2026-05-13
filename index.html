@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -604,15 +604,15 @@
 
   <!-- Fields -->
   <div class="fields">
-    <!-- Bill -->
+    <!-- Before tax -->
     <div class="row">
-      <div class="field" data-field="bill" id="f-bill">
+      <div class="field" data-field="pre" id="f-pre">
         <div class="cell align-right">
-          <div class="label">Before Tip <span class="caret"></span></div>
+          <div class="label">Before Tax <span class="caret"></span></div>
           <div class="cell-body">
             <div class="amount-stack">
-              <div class="primary"><span class="num-anim" id="bill-usd">$0.00</span></div>
-              <div class="secondary"><span class="num-anim" id="bill-dkk">0,00 kr.</span></div>
+              <div class="primary"><span class="num-anim" id="pre-usd">$0.00</span></div>
+              <div class="secondary"><span class="num-anim" id="pre-dkk">0,00 kr.</span></div>
             </div>
           </div>
         </div>
@@ -640,15 +640,15 @@
       </div>
     </div>
 
-    <!-- Before tax -->
+    <!-- Bill (After Tax) -->
     <div class="row">
-      <div class="field" data-field="pre" id="f-pre">
+      <div class="field" data-field="bill" id="f-bill">
         <div class="cell align-right">
-          <div class="label">Before Tax <span class="caret"></span></div>
+          <div class="label">After Tax <span class="caret"></span></div>
           <div class="cell-body">
             <div class="amount-stack">
-              <div class="primary"><span class="num-anim" id="pre-usd">$0.00</span></div>
-              <div class="secondary"><span class="num-anim" id="pre-dkk">0,00 kr.</span></div>
+              <div class="primary"><span class="num-anim" id="bill-usd">$0.00</span></div>
+              <div class="secondary"><span class="num-anim" id="bill-dkk">0,00 kr.</span></div>
             </div>
           </div>
         </div>
@@ -742,21 +742,14 @@
   <!-- Exchange rate sheet -->
   <div class="sheet-backdrop" id="rateBackdrop"></div>
   <div class="sheet" id="rateSheet" role="dialog" aria-modal="true">
-    <h3>Currency &amp; Rate</h3>
-    <p>Pick the currency pair and conversion. Stored locally on this device.</p>
+    <h3>Exchange Rate</h3>
+    <p>Set the current USD → DKK rate. Stored locally on this device.</p>
     <div class="rate-row">
-      <span class="lbl">From</span>
-      <select id="primarySelect" class="ccy-select"></select>
+      <span class="lbl">1 USD =</span>
+      <input type="text" inputmode="decimal" id="rateInput" value="6.88" />
+      <span class="lbl" style="min-width: 32px; text-align: right;">DKK</span>
     </div>
-    <div class="rate-row">
-      <span class="lbl">To</span>
-      <select id="secondarySelect" class="ccy-select"></select>
-    </div>
-    <div class="rate-row">
-      <span class="lbl" id="rateLabel">1 USD =</span>
-      <input type="text" inputmode="decimal" id="rateInput" value="6.38" />
-      <span class="lbl" id="rateSuffix" style="min-width: 32px; text-align: right;">DKK</span>
-    </div>
+    <p id="rateLastUpdated" style="margin: -8px 0 16px; font-size: 11px; color: var(--ink-mute); text-align: right;"></p>
     <div class="sheet-actions">
       <button class="btn" id="rateCancel">Cancel</button>
       <button class="btn primary" id="rateSave">Save</button>
@@ -788,23 +781,13 @@
 const LS = {
   TAX:  'tip_tax_rate_v2',
   RATE: 'tip_fx_rate_v2',
-  PRI:  'tip_primary_ccy_v2',
-  SEC:  'tip_secondary_ccy_v2',
   TMODE:'tip_mode_v2',
   TTGT: 'tip_target_v2',
 };
 
 const CCY = {
-  USD: { code: 'USD', name: 'US Dollar',       locale: 'en-US', prefix: '$',    suffix: '',     thou: ',', dec: '.' },
-  DKK: { code: 'DKK', name: 'Danish Krone',    locale: 'da-DK', prefix: '',     suffix: ' kr.', thou: '.', dec: ',' },
-  EUR: { code: 'EUR', name: 'Euro',            locale: 'de-DE', prefix: '€',    suffix: '',     thou: '.', dec: ',' },
-  GBP: { code: 'GBP', name: 'British Pound',   locale: 'en-GB', prefix: '£',    suffix: '',     thou: ',', dec: '.' },
-  SEK: { code: 'SEK', name: 'Swedish Krona',   locale: 'sv-SE', prefix: '',     suffix: ' kr',  thou: ' ', dec: ',' },
-  NOK: { code: 'NOK', name: 'Norwegian Krone', locale: 'nb-NO', prefix: '',     suffix: ' kr',  thou: ' ', dec: ',' },
-  CHF: { code: 'CHF', name: 'Swiss Franc',     locale: 'de-CH', prefix: 'CHF ', suffix: '',     thou: '’', dec: '.' },
-  JPY: { code: 'JPY', name: 'Japanese Yen',    locale: 'ja-JP', prefix: '¥',    suffix: '',     thou: ',', dec: '.', noDecimals: true },
-  CAD: { code: 'CAD', name: 'Canadian Dollar', locale: 'en-CA', prefix: 'C$',   suffix: '',     thou: ',', dec: '.' },
-  AUD: { code: 'AUD', name: 'Australian Dollar', locale: 'en-AU', prefix: 'A$', suffix: '',     thou: ',', dec: '.' },
+  USD: { code: 'USD', prefix: '$',  suffix: '',     thou: ',', dec: '.' },
+  DKK: { code: 'DKK', prefix: '',   suffix: ' kr.', thou: '.', dec: ',' },
 };
 
 function clampNum(v, lo, hi, fb) {
@@ -812,8 +795,6 @@ function clampNum(v, lo, hi, fb) {
   return Math.max(lo, Math.min(hi, v));
 }
 
-const _pri = localStorage.getItem(LS.PRI);
-const _sec = localStorage.getItem(LS.SEC);
 const _tm  = localStorage.getItem(LS.TMODE);
 const _tt  = parseFloat(localStorage.getItem(LS.TTGT));
 const state = {
@@ -821,9 +802,9 @@ const state = {
   preBuf: '',
   mode: 'bill',
   taxRate: clampNum(parseFloat(localStorage.getItem(LS.TAX)), 0, 100, 8.375),
-  fxRate:  clampNum(parseFloat(localStorage.getItem(LS.RATE)), 0.0001, 100000, 6.38),
-  primary:   (CCY[_pri] ? _pri : 'USD'),
-  secondary: (CCY[_sec] ? _sec : 'DKK'),
+  fxRate:  clampNum(parseFloat(localStorage.getItem(LS.RATE)), 0.0001, 100000, 6.88),
+  primary:   'USD',
+  secondary: 'DKK',
   tipMode:   (_tm === 'exact' || _tm === 'smart') ? _tm : 'smart',
   tipTarget: (_tt === 15 || _tt === 20) ? _tt : 20,
   tipBuf: '',
@@ -875,15 +856,24 @@ function smartTipFor(bill, targetPct) {
   if (bill <= 0) return targetPct;
   const desired = bill * (1 + targetPct / 100);
 
+  if (bill >= 60) {
+    if (targetPct === 20) {
+      // Nearest $5 to 20%; acceptable range ~17.5–21%
+      const rounded = Math.round(desired / 5) * 5;
+      return ((rounded - bill) / bill) * 100;
+    }
+    // Smart 15: ceil to nearest $5 so total is always at least 15%
+    const rounded = Math.ceil((desired - 1e-9) / 5) * 5;
+    return ((rounded - bill) / bill) * 100;
+  }
+
   if (targetPct === 20) {
-    // Nearest whole dollar to 20%; ties (exactly X.50) go to floor (cheaper).
-    // If this ties with smart 15, that's honest: the bill is too small for a
-    // clean whole-dollar distinction between 15% and 20%.
+    // Nearest whole dollar; ties go to floor
     const useTotal = Math.floor(desired + 0.5 - 1e-9);
     return ((useTotal - bill) / bill) * 100;
   }
 
-  // Smart 15: always ceil so the total is at least 15%.
+  // Smart 15: always ceil so total is at least 15%
   const roundedTotal = Math.ceil(desired - 1e-9);
   return ((roundedTotal - bill) / bill) * 100;
 }
@@ -1002,7 +992,6 @@ function render() {
     }
   });
 
-  setText('rateBadgePair', state.primary + '/' + state.secondary);
   setText('rateBadgeVal', formatRateNumber(state.fxRate));
 
   document.querySelectorAll('.cell.focused').forEach(el => el.classList.remove('focused'));
@@ -1061,7 +1050,7 @@ function pressKey(k) {
     return;
   }
   if (k === 'up' || k === 'down') {
-    const order = ['bill', 'tax', 'pre', 'tip'];
+    const order = ['pre', 'tax', 'bill', 'tip'];
     const idx = order.indexOf(state.focus);
     const next = k === 'down'
       ? (idx + 1) % order.length
@@ -1129,6 +1118,8 @@ function commitBuffers() {
 
 function setFocus(f) {
   commitBuffers();
+  if (f === 'bill' && state.mode === 'pre') state.billBuf = '';
+  if (f === 'pre'  && state.mode === 'bill') state.preBuf = '';
   state.focus = f;
   render();
 }
@@ -1192,33 +1183,13 @@ window.addEventListener('keydown', (e) => {
 /* ========= Rate sheet ========= */
 const rateBackdrop = $('rateBackdrop');
 const rateSheet = $('rateSheet');
-const primarySelect = $('primarySelect');
-const secondarySelect = $('secondarySelect');
-
-function populateCurrencySelects() {
-  const codes = Object.keys(CCY);
-  [primarySelect, secondarySelect].forEach(sel => {
-    sel.innerHTML = '';
-    codes.forEach(code => {
-      const opt = document.createElement('option');
-      opt.value = code;
-      opt.textContent = code + ' — ' + CCY[code].name;
-      sel.appendChild(opt);
-    });
-  });
-}
-populateCurrencySelects();
-
-function updateRateSheetLabels() {
-  $('rateLabel').textContent  = '1 ' + primarySelect.value + ' =';
-  $('rateSuffix').textContent = secondarySelect.value;
-}
 
 function openRateSheet() {
-  primarySelect.value   = state.primary;
-  secondarySelect.value = state.secondary;
-  updateRateSheetLabels();
-  $('rateInput').value  = formatRateNumber(state.fxRate);
+  $('rateInput').value = formatRateNumber(state.fxRate);
+  const ts = parseInt(localStorage.getItem('tip_rate_fetched') || '0', 10);
+  $('rateLastUpdated').textContent = ts
+    ? 'Live rate from ' + new Date(ts).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+    : 'No live rate fetched yet';
   rateBackdrop.classList.add('open');
   rateSheet.classList.add('open');
 }
@@ -1226,31 +1197,15 @@ function closeRateSheet() {
   rateBackdrop.classList.remove('open');
   rateSheet.classList.remove('open');
 }
-primarySelect.addEventListener('change', () => {
-  if (primarySelect.value === secondarySelect.value) {
-    secondarySelect.value = state.primary;
-  }
-  updateRateSheetLabels();
-});
-secondarySelect.addEventListener('change', () => {
-  if (secondarySelect.value === primarySelect.value) {
-    primarySelect.value = state.secondary;
-  }
-  updateRateSheetLabels();
-});
 $('rateBadge').addEventListener('click', openRateSheet);
 rateBackdrop.addEventListener('click', closeRateSheet);
 $('rateCancel').addEventListener('click', closeRateSheet);
 $('rateSave').addEventListener('click', () => {
   const n = parseFloat($('rateInput').value);
-  state.primary   = primarySelect.value;
-  state.secondary = secondarySelect.value;
   if (isFinite(n) && n > 0) {
     state.fxRate = clampNum(n, 0.0001, 100000, state.fxRate);
+    localStorage.setItem(LS.RATE, String(state.fxRate));
   }
-  localStorage.setItem(LS.PRI,  state.primary);
-  localStorage.setItem(LS.SEC,  state.secondary);
-  localStorage.setItem(LS.RATE, String(state.fxRate));
   render();
   closeRateSheet();
 });
@@ -1288,6 +1243,28 @@ $('taxSave').addEventListener('click', () => {
 
 // Initial render
 render();
+
+// Fetch live USD/DKK rate from frankfurter.app (ECB data, no API key needed)
+// Only fetches if cached rate is older than 24h
+async function fetchLiveRate() {
+  const lastFetch = parseInt(localStorage.getItem('tip_rate_fetched') || '0', 10);
+  if (Date.now() - lastFetch < 86_400_000) return;
+  try {
+    const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=DKK');
+    const data = await res.json();
+    const rate = data?.rates?.DKK;
+    if (rate && isFinite(rate)) {
+      state.fxRate = rate;
+      localStorage.setItem(LS.RATE, String(rate));
+      localStorage.setItem('tip_rate_fetched', String(Date.now()));
+      render();
+      // Update label if sheet happens to be open
+      const el = $('rateLastUpdated');
+      if (el) el.textContent = 'Live rate from ' + new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+    }
+  } catch (_) {}
+}
+fetchLiveRate();
 </script>
 
 <script>
