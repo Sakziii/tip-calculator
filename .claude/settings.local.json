@@ -4,7 +4,12 @@
       "Bash(git config *)",
       "Bash(git commit *)",
       "Bash(git add *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(git check-ignore *)",
+      "Bash(dir icon-192.png)",
+      "Bash(Test-Path \"C:\\\\Users\\\\Sakzi\\\\Documents\\\\Projekter\\\\HTML\\\\Tip\\\\icon-192.png\")",
+      "Bash(git stash *)",
+      "Bash(git pull *)"
     ]
   }
 }
