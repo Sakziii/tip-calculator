@@ -1,4 +1,4 @@
-const CACHE = 'tip-v2';
+const CACHE = 'tip-v3';
 
 const PRECACHE = [
   './index.html',
