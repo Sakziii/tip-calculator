@@ -234,6 +234,8 @@
   .amount-stack { display: flex; flex-direction: column; gap: 2px; min-width: 0; width: 100%; }
   .cell.align-right .amount-stack { align-items: flex-end; }
 
+  .primary.shrink { font-size: 17px; }
+
   .primary {
     font-family: 'Roboto Mono', monospace;
     font-feature-settings: "tnum" 1, "zero" 1;
@@ -669,7 +671,7 @@
           </div>
         </div>
         <div class="cell align-right tip-amt" id="tip-amt-cell" style="cursor:pointer;">
-          <div class="label">Tip <span id="tip-amt-mode" class="caret" style="opacity:1;border-radius:0;width:auto;height:auto;background:none;font-size:9px;letter-spacing:0.14em;color:var(--gold);box-shadow:none;">✦20</span></div>
+          <div class="label">Tip</div>
           <div class="cell-body">
             <div class="amount-stack">
               <div class="primary"><span class="num-anim" id="tip-usd">$0.00</span></div>
@@ -971,8 +973,7 @@ function render() {
   setText('tip-pct', tipPctText);
   setText('tip-usd', fmtPri(c.tipAmt));
   setText('tip-dkk', fmtSec(c.tipAmt * fx));
-  const modeEl = document.getElementById('tip-amt-mode');
-  if (modeEl) modeEl.textContent = '✦' + state.tipTarget;
+  $('tip-usd').closest('.primary').classList.toggle('shrink', c.tipAmt >= 1000);
 
   const sparkle = $('tip-sparkle');
   const tipPctWrap = $('tip-pct-wrap');
