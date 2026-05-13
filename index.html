@@ -590,7 +590,7 @@
     <span></span>
     <button class="rate-badge" id="rateBadge" aria-label="Edit currency and exchange rate">
       <span class="pair" id="rateBadgePair">USD/DKK</span>
-      <span class="val" id="rateBadgeVal">6.88</span>
+      <span class="val" id="rateBadgeVal">6.38</span>
     </button>
   </div>
 
@@ -746,7 +746,7 @@
     </div>
     <div class="rate-row">
       <span class="lbl" id="rateLabel">1 USD =</span>
-      <input type="text" inputmode="decimal" id="rateInput" value="6.88" />
+      <input type="text" inputmode="decimal" id="rateInput" value="6.38" />
       <span class="lbl" id="rateSuffix" style="min-width: 32px; text-align: right;">DKK</span>
     </div>
     <div class="sheet-actions">
@@ -813,7 +813,7 @@ const state = {
   preBuf: '',
   mode: 'bill',
   taxRate: clampNum(parseFloat(localStorage.getItem(LS.TAX)), 0, 100, 8.375),
-  fxRate:  clampNum(parseFloat(localStorage.getItem(LS.RATE)), 0.0001, 100000, 6.88),
+  fxRate:  clampNum(parseFloat(localStorage.getItem(LS.RATE)), 0.0001, 100000, 6.38),
   primary:   (CCY[_pri] ? _pri : 'USD'),
   secondary: (CCY[_sec] ? _sec : 'DKK'),
   tipMode:   (_tm === 'exact' || _tm === 'smart') ? _tm : 'smart',
